@@ -7,7 +7,7 @@ export const actionTypes = {
 export const initialState = {
   user: null,
   token: null,
-  loading: true,
+  loading: false,
   error: null,
 };
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import "./style.css";
 import axios from "axios";
-import { useAuthDispatch } from "../../context/auth-context";
+import { useAuthDispatch, useAuthState } from "../../context/auth-context";
 import { actionTypes } from "../../context/reducer";
 
 const fetchToken = async (username, password) => {
@@ -22,20 +22,34 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState(null);
+  const { loading } = useAuthState();
   const dispatch = useAuthDispatch();
 
   const handleLogin = (e) => {
     e.preventDefault();
+    dispatch({
+      type: actionTypes.LOGIN_REQUEST,
+    });
     fetchToken(username, password).then(({ success, data }) => {
       if (success) {
         setToken(data);
       }
     });
   };
+  useLayoutEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      dispatch({
+        type: actionTypes.LOGIN_REQUEST,
+      });
+      setToken(token);
+    }
+  }, [dispatch]);
   useEffect(() => {
     if (token) {
       fetchCurrentUserInfo(token).then(({ success, data }) => {
         if (success) {
+          localStorage.setItem("token", token);
           dispatch({
             type: actionTypes.LOGIN_SUCCESS,
             payload: {
@@ -49,27 +63,36 @@ export default function Login() {
   }, [token, dispatch]);
 
   return (
-    <div className="login">
-      <h1>Login</h1>
-      <form method="post" onSubmit={handleLogin}>
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          type="text"
-          placeholder="Username"
-          required="required"
-        />
-        <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          type="password"
-          placeholder="Password"
-          required="required"
-        />
-        <button type="submit" className="btn btn-primary btn-block btn-large">
-          Let me in.
-        </button>
-      </form>
-    </div>
+    <>
+      {loading ? (
+        <p>loading</p>
+      ) : (
+        <div className="login">
+          <h1>Login</h1>
+          <form method="post" onSubmit={handleLogin}>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              placeholder="Username"
+              required="required"
+            />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="Password"
+              required="required"
+            />
+            <button
+              type="submit"
+              className="btn btn-primary btn-block btn-large"
+            >
+              Let me in.
+            </button>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
